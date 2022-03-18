@@ -1,0 +1,4 @@
+.idea/
+/torch2tflite.egg-info/
+/output/
+__pycache__/

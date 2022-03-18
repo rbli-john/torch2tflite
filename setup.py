@@ -4,7 +4,8 @@ from setuptools import setup
 REQUIREMENTS = [
     'tensorflow ~= 2.5',
     'tflite-runtime ~= 2.5',
-    'torch == 1.8.1',
+    'torch >= 1.8.1',
+    'torchvision ~= 0.12',
     'tensorflow-addons ~= 0.13',
     'opencv-python ~= 4.5.2',
     'onnx ~= 1.9',

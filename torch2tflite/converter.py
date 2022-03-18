@@ -7,6 +7,8 @@ import sys
 import shutil
 import logging
 
+logging.basicConfig(level=logging.INFO)
+
 import cv2
 import numpy as np
 import onnx
@@ -71,7 +73,8 @@ class Torch2TFLiteConverter:
         except Exception:
             logging.error('Can not load PyTorch model. Please make sure'
                           'that model saved like `torch.save(model, PATH)`')
-            sys.exit(-1)
+            raise
+            # sys.exit(-1)
 
     def load_tflite(self):
 
@@ -95,6 +98,8 @@ class Torch2TFLiteConverter:
             else:
                 imread_flags = cv2.IMREAD_ANYCOLOR + cv2.IMREAD_ANYDEPTH
             try:
+                logging.warning('dsize=%s', target_shape[:2])
+
                 img = cv2.resize(
                     src=cv2.imread(file_path, imread_flags),
                     dsize=target_shape[:2],
@@ -113,7 +118,8 @@ class Torch2TFLiteConverter:
 
             except Exception:
                 logging.error(f'Can not load sample input from, {file_path}')
-                sys.exit(-1)
+                raise
+                # sys.exit(-1)
 
         else:
             logging.info(f'Sample input file path not specified, random data will be generated')
@@ -174,10 +180,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--torch-path', type=str, required=True)
     parser.add_argument('--tflite-path', type=str, required=True)
-    parser.add_argument('--target-shape', type=tuple, nargs=3, default=(224, 224, 3))
+    parser.add_argument('--target-shape', type=int, nargs=3, default=[224, 224, 3])
     parser.add_argument('--sample-file', type=str)
     parser.add_argument('--seed', type=int, default=10)
     args = parser.parse_args()
+
+    args.target_shape = tuple(args.target_shape)
+    logging.info('args.target_shape=%s', args.target_shape)
 
     conv = Torch2TFLiteConverter(
         args.torch_path,
