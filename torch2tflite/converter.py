@@ -15,6 +15,10 @@ import onnx
 from onnx_tf.backend import prepare
 import torch
 import tensorflow as tf
+from typing import Union
+
+# # Need to import loaded model's class definition.
+# from try_lode_model import MyModule
 
 
 class Torch2TFLiteConverter:
@@ -25,7 +29,8 @@ class Torch2TFLiteConverter:
             sample_file_path: Optional[str] = None,
             target_shape: tuple = (224, 224, 3),
             seed: int = 10,
-            normalize: bool = True
+            normalize: bool = True,
+            use_jit: bool = False
     ):
         self.torch_model_path = torch_model_path
         self.tflite_model_path = tflite_model_save_path
@@ -38,7 +43,7 @@ class Torch2TFLiteConverter:
         self.__check_tmpdir()
         self.onnx_model_path = os.path.join(self.tmpdir, 'model.onnx')
         self.tf_model_path = os.path.join(self.tmpdir, 'tf_model')
-        self.torch_model = self.load_torch_model()
+        self.torch_model = self.load_torch_model(use_jit=use_jit)
         self.sample_data = self.load_sample_input(sample_file_path, target_shape, seed, normalize)
 
     def convert(self):
@@ -60,12 +65,17 @@ class Torch2TFLiteConverter:
             logging.error('Can not create temporary directory, exiting!')
             sys.exit(-1)
 
-    def load_torch_model(self) -> torch.nn.Module:
+    def load_torch_model(self, use_jit: bool = False) -> Union[torch.nn.Module, torch.jit.ScriptModule]:
         try:
             if self.torch_model_path.endswith('.pth') or self.torch_model_path.endswith('.pt'):
-                model = torch.load(self.torch_model_path, map_location='cpu')
+                if not use_jit:
+                    model = torch.load(self.torch_model_path, map_location='cpu')
+                else:
+                    logging.info('Use jit to load')
+                    model = torch.jit.load(self.torch_model_path, map_location='cpu')
                 model = model.eval()
                 logging.info('PyTorch model successfully loaded and mapped to CPU')
+                logging.info('Type of loaded module %s', type(model))
                 return model
             else:
                 logging.error('Specified file path not compatible with torch2tflite, exiting!')
@@ -179,6 +189,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--torch-path', type=str, required=True)
+    parser.add_argument('--use-jit', action='store_true')
     parser.add_argument('--tflite-path', type=str, required=True)
     parser.add_argument('--target-shape', type=int, nargs=3, default=[224, 224, 3])
     parser.add_argument('--sample-file', type=str)
@@ -186,14 +197,17 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     args.target_shape = tuple(args.target_shape)
+    logging.info('args.torch_path=%s', args.torch_path)
     logging.info('args.target_shape=%s', args.target_shape)
+    logging.info('args.use_jit=%s', args.use_jit)
 
     conv = Torch2TFLiteConverter(
         args.torch_path,
         args.tflite_path,
         args.sample_file,
         args.target_shape,
-        args.seed
+        args.seed,
+        use_jit=args.use_jit
     )
     conv.convert()
     sys.exit(0)

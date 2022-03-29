@@ -2,3 +2,4 @@
 /torch2tflite.egg-info/
 /output/
 __pycache__/
+/tmp/

@@ -10,7 +10,8 @@ REQUIREMENTS = [
     'opencv-python ~= 4.5.2',
     'onnx ~= 1.9',
     'onnx-tf ~= 1.8',
-    'numpy >= 1.19'
+    'numpy >= 1.19',
+    'MonkeyType'
 ]
 
 # some more details
